@@ -3,7 +3,7 @@ import tkinter as tk
 import random
 
 def generate_key():
-    key = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=16))
+    key = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
     key_entry.delete(0, tk.END)
     key_entry.insert(0, key)
 
@@ -11,25 +11,34 @@ def loadKey():
     try:
         with open(loadKey_entry.get(), "r") as file:
             key = file.read()
-            key_entry.delete(0, tk.END)
-            key_entry.insert(0, key)
-            file.close()
+            if len(key) == 8:
+                key_entry.delete(0, tk.END)
+                key_entry.insert(0, key)
+                file.close()
+            else:
+                print("Klucz ma nieprawidłową długość")
+                file.close()
     except FileNotFoundError:
         print("Plik nie istnieje")
 
 def saveKey():
-    with open(saveKey_entry.get(), "w") as file:
-        key = key_entry.get()
-        print(key)
-        file.write(key)
-        file.close()
-
+    try:
+        with open(saveKey_entry.get(), "w") as file:
+            if len(key_entry.get()) == 8:
+                key = key_entry.get()
+                file.write(key)
+                file.close()
+            else:
+                print("Klucz ma nieprawidłową długość")
+                file.close()
+    except FileNotFoundError:
+        print("Nie podano nazwy")
 
 root = tk.Tk()
 root.geometry("900x600")
 
 key_frame = tk.Frame(root, bd=2, relief=tk.RAISED)
-key_frame.place(x=200, y=0)
+key_frame.place(x=250, y=0)
 
 inner_frame = tk.Frame(key_frame)
 inner_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
@@ -41,7 +50,7 @@ text_label.grid(row=0, column=1)
 key_label = tk.Label(inner_frame, text="Twój klucz:", font=("Aerial", 8))
 key_label.grid(row=1, column=0)
 
-key_entry = tk.Entry(inner_frame, width=30, font=("Arial", 8))
+key_entry = tk.Entry(inner_frame, width=15, font=("Arial", 8))
 key_entry.grid(row=1, column=1)
 
 key_entry.bind("<Key>", lambda e: "break")
@@ -52,7 +61,7 @@ generate_button.grid(row=1, column=2, padx=10)
 loadKey_label = tk.Label(inner_frame, text="Wczytaj klucz z pliku:", font=("Aerial", 8))
 loadKey_label.grid(row=2, column=0)
 
-loadKey_entry = tk.Entry(inner_frame, width=30, font=("Aerial", 8))
+loadKey_entry = tk.Entry(inner_frame, width=15, font=("Aerial", 8))
 loadKey_entry.grid(row=2, column=1)
 
 loadKey_button = tk.Button(inner_frame, text="Wczytaj", font=("Arial", 8), command=loadKey)
@@ -61,11 +70,19 @@ loadKey_button.grid(row=2, column=2, padx=10)
 saveKey_label = tk.Label(inner_frame, text="Zapisz klucz do pliku:", font=("Aerial", 8))
 saveKey_label.grid(row=3, column=0)
 
-saveKey_entry = tk.Entry(inner_frame, width=30, font=("Aerial", 8))
+saveKey_entry = tk.Entry(inner_frame, width=15, font=("Aerial", 8))
 saveKey_entry.grid(row=3, column=1)
 
 saveKey_button = tk.Button(inner_frame, text="Zapisz", font=("Arial", 8), command=saveKey)
 saveKey_button.grid(row=3, column=2, padx=10)
+
+sd_frame = tk.Frame(root, bd=2, relief=tk.RAISED)
+sd_frame.place(x=250 , y=200)
+
+inner2_frame = tk.Frame(sd_frame)
+inner2_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
+
+
 
 root.mainloop()
 
