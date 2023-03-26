@@ -6,13 +6,24 @@ def generate_key():
     key = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=16))
     key_entry.delete(0, tk.END)
     key_entry.insert(0, key)
-    return key
 
 def loadKey():
-    return 1
+    try:
+        with open(loadKey_entry.get(), "r") as file:
+            key = file.read()
+            key_entry.delete(0, tk.END)
+            key_entry.insert(0, key)
+            file.close()
+    except FileNotFoundError:
+        print("Plik nie istnieje")
 
 def saveKey():
-    return 1
+    with open(saveKey_entry.get(), "w") as file:
+        key = key_entry.get()
+        print(key)
+        file.write(key)
+        file.close()
+
 
 root = tk.Tk()
 root.geometry("900x600")
