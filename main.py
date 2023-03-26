@@ -6,6 +6,7 @@ def generate_key():
     key = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
     key_entry.delete(0, tk.END)
     key_entry.insert(0, key)
+    return key
 
 def loadKey():
     try:
@@ -82,9 +83,7 @@ sd_frame.place(x=250 , y=200)
 inner2_frame = tk.Frame(sd_frame)
 inner2_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
 
-
-
-root.mainloop()
+#root.mainloop()
 
 
 def char_to_bits(char):
@@ -124,28 +123,30 @@ def initialPermutation(textToPermute):
     result = ""
     for i in dt.IP:
         result +=textToPermute[i - 1]
-    print("created permutatuin: ", result)
     return result
-initialPermutation(create64BitsBlock("ABCD1234"))
 
 def divide64BitsIntoLeftRihtHalf(bits):
     left = bits[:32]
     right = bits[32:]
-    print(left)
-    print(right)
+    return left, right
 
 def extendRightHalfOfData(rightHalf):
     result = ""
     for i in dt.E:
         result += rightHalf[i-1]
-    print("extendent right:", result)
     return result
 
-def createKey(key64Bits):
-    key48Bits = ""
+def create56BitsKey(key64Bits):
+    key56Bits = ""
     for i in dt.PC1:
-        key48Bits += key64Bits[i - 1]
-    return key48Bits
+        key56Bits += key64Bits[i - 1]
+    return key56Bits
+
+def create48BitsKey(key56Bits):
+    key48Bits = ""
+    for i in dt.PC2:
+        key48Bits += key56Bits[i - 1]
+    return key56Bits
 
 def moveKeyBitsIntoLeft(key, numberOfPositions):
     return key[numberOfPositions:] + key[:numberOfPositions]
@@ -181,6 +182,46 @@ def permutateWithSBoxes(dataToPermutate):
 def permutateWithPBlock(dataToPermutate):
     result = ""
     for i in dt.P:
-        result += dataToPermutate[i]
+        result += dataToPermutate[i-1]
     return result
+
+def xorOnLeftHalfAndPermutationWithPBlockResult(leftHalf, pBlockResult):
+    result = ""
+    for i in range(32):
+        tmp = int(leftHalf[i]) + int(pBlockResult[i])
+        if tmp%2 == 0:
+            result += "0"
+        else:
+            result += "1"
+    return result
+
+def finalPermutation(dataToPermutate):
+    result = ""
+    for i in dt.IPMinus1:
+        result += dataToPermutate[i-1]
+    return result
+
+message = "abcd1234"
+key = "klucz001"
+message = create64BitsBlock(message)
+message = initialPermutation(message)
+left, right = divide64BitsIntoLeftRihtHalf(message)
+key = create64BitsBlock(key)
+print("MOJ KLUCZ:", key)
+key = create56BitsKey(key)
+for i in range(16):
+    rightCpy = right
+    keyMoved = moveKeyBitsIntoLeft(key, i+1)
+    key48 = create48BitsKey(keyMoved)
+    right = extendRightHalfOfData(right)
+    xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
+    xorResult = divideXorResultInto8x6BitBlocks(xorResult)
+    afterSBoxesPermutation = permutateWithSBoxes(xorResult)
+    pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
+    right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
+    left = rightCpy
+finalConcatenate = left + right
+print(finalPermutation(finalConcatenate))
+
+
 
