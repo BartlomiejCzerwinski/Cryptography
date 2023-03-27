@@ -1,3 +1,5 @@
+import base64
+
 import DesTables as dt
 import tkinter as tk
 import random
@@ -90,6 +92,12 @@ def char_to_bits(char):
     binary_string = bin(ord(char))[2:].zfill(8)
     bits = [int(bit) for bit in binary_string]
     return bits
+
+def bits_to_char(bits):
+    binary_string = ''.join(str(bit) for bit in bits)
+    char_code = int(binary_string, 2)
+    return chr(char_code)
+
 
 def arrayToString(array):
     result = ""
@@ -201,27 +209,76 @@ def finalPermutation(dataToPermutate):
         result += dataToPermutate[i-1]
     return result
 
-message = "abcd1234"
-key = "klucz001"
-message = create64BitsBlock(message)
-message = initialPermutation(message)
-left, right = divide64BitsIntoLeftRihtHalf(message)
-key = create64BitsBlock(key)
-print("MOJ KLUCZ:", key)
-key = create56BitsKey(key)
-for i in range(16):
-    rightCpy = right
-    keyMoved = moveKeyBitsIntoLeft(key, i+1)
-    key48 = create48BitsKey(keyMoved)
-    right = extendRightHalfOfData(right)
-    xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
-    xorResult = divideXorResultInto8x6BitBlocks(xorResult)
-    afterSBoxesPermutation = permutateWithSBoxes(xorResult)
-    pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
-    right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
-    left = rightCpy
-finalConcatenate = left + right
-print(finalPermutation(finalConcatenate))
+def encode_to_base64(binary_string):
+    binary_bytes = int(binary_string, 2).to_bytes((len(binary_string) + 7) // 8, byteorder='big')
+    base64_bytes = base64.b64encode(binary_bytes)
+    base64_string = base64_bytes.decode('ascii')
+    return base64_string
+
+def decode_from_base64(base64_string):
+    base64_bytes = base64_string.encode('ascii')
+    binary_bytes = base64.b64decode(base64_bytes)
+    binary_string = bin(int.from_bytes(binary_bytes, byteorder='big'))[2:]
+    padding = (8 - len(binary_string) % 8) % 8
+    binary_string = '0' * padding + binary_string
+    return binary_string
+
+def encrypt(textToEncrypt, key):
+    result = ""
+    for i in range(0, len(textToEncrypt), 8):
+        message = textToEncrypt[i:i+8]
+        key = "klucz001"
+        message = create64BitsBlock(message)
+        message = initialPermutation(message)
+        left, right = divide64BitsIntoLeftRihtHalf(message)
+        key = create64BitsBlock(key)
+        key = create56BitsKey(key)
+        for i in range(16):
+            rightCpy = right
+            keyMoved = moveKeyBitsIntoLeft(key, i+1)
+            key48 = create48BitsKey(keyMoved)
+            right = extendRightHalfOfData(right)
+            xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
+            xorResult = divideXorResultInto8x6BitBlocks(xorResult)
+            afterSBoxesPermutation = permutateWithSBoxes(xorResult)
+            pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
+            right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
+            left = rightCpy
+        finalConcatenate = left + right
+        result += finalPermutation(finalConcatenate)
+    return encode_to_base64(result)
+
+import base64
+
+def decrypt(ciphertext, key):
+    result = ""
+    ciphertext = decode_from_base64(ciphertext)
+    for i in range(0, len(ciphertext), 64):
+        block = ciphertext[i:i+64]
+        key = "klucz001"
+        block = initialPermutation(block)
+        left, right = divide64BitsIntoLeftRihtHalf(block)
+        key = create64BitsBlock(key)
+        key = create56BitsKey(key)
+        for i in range(16):
+            rightCpy = right
+            keyMoved = moveKeyBitsIntoLeft(key, 16-i)
+            key48 = create48BitsKey(keyMoved)
+            right = extendRightHalfOfData(right)
+            xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
+            xorResult = divideXorResultInto8x6BitBlocks(xorResult)
+            afterSBoxesPermutation = permutateWithSBoxes(xorResult)
+            pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
+            right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
+            left = rightCpy
+        finalConcatenate = left + right
+        block = finalPermutation(finalConcatenate)
+        result += bits_to_char(block)
+    return result
+
+
+#print(encrypt("to ", "klucz001"))
+print("RESULT:", decrypt("3+eFACLumXc=", "klucz001"))
 
 
 
