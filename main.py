@@ -1,5 +1,3 @@
-import base64
-
 import DesTables as dt
 import tkinter as tk
 import random
@@ -124,7 +122,6 @@ def create64BitsBlock(plaintext):
         result += (arrayToString(charAsBits))
     if len(result) < 64:
         result += ((64 - len(result)) * "0")
-    print("created block: ", result)
     return result
 
 def initialPermutation(textToPermute):
@@ -227,7 +224,6 @@ def encrypt(textToEncrypt, key):
     result = ""
     for i in range(0, len(textToEncrypt), 8):
         message = textToEncrypt[i:i+8]
-        key = "klucz001"
         message = create64BitsBlock(message)
         message = initialPermutation(message)
         left, right = divide64BitsIntoLeftRihtHalf(message)
@@ -244,25 +240,25 @@ def encrypt(textToEncrypt, key):
             pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
             right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
             left = rightCpy
-        finalConcatenate = left + right
+        finalConcatenate = right+left
         result += finalPermutation(finalConcatenate)
     return encode_to_base64(result)
 
 import base64
 
-def decrypt(ciphertext, key):
+def decrypt(textToDecrypt, key):
+    word = ""
+    textToDecrypt = decode_from_base64(textToDecrypt)
     result = ""
-    ciphertext = decode_from_base64(ciphertext)
-    for i in range(0, len(ciphertext), 64):
-        block = ciphertext[i:i+64]
-        key = "klucz001"
-        block = initialPermutation(block)
-        left, right = divide64BitsIntoLeftRihtHalf(block)
+    for i in range(0, len(textToDecrypt), 64):
+        message = textToDecrypt[i:i+64]
+        message = initialPermutation(message)
+        left, right = divide64BitsIntoLeftRihtHalf(message)
         key = create64BitsBlock(key)
         key = create56BitsKey(key)
-        for i in range(16):
+        for i in reversed(range(16)):
             rightCpy = right
-            keyMoved = moveKeyBitsIntoLeft(key, 16-i)
+            keyMoved = moveKeyBitsIntoLeft(key, i+1)
             key48 = create48BitsKey(keyMoved)
             right = extendRightHalfOfData(right)
             xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
@@ -271,14 +267,23 @@ def decrypt(ciphertext, key):
             pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
             right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
             left = rightCpy
-        finalConcatenate = left + right
-        block = finalPermutation(finalConcatenate)
-        result += bits_to_char(block)
-    return result
+        finalConcatenate = right+left
+        result += finalPermutation(finalConcatenate)
+    for i in range(0, len(result), 8):
+        if(result[i:i+8] != "00000000"):
+            word += bits_to_char(result[i:i+8])
+
+    return word
 
 
-#print(encrypt("to ", "klucz001"))
-print("RESULT:", decrypt("3+eFACLumXc=", "klucz001"))
+
+
+encrypted_text = encrypt("Dostalem ocene bardzo dobra!", "myKey123")
+print(encrypted_text)
+print(decrypt(encrypted_text, "myKey123"))
+
+
+
 
 
 
