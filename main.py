@@ -1,6 +1,7 @@
 import DesTables as dt
 import tkinter as tk
 import random
+import base64
 
 def generate_key():
     key = ''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', k=8))
@@ -35,56 +36,25 @@ def saveKey():
     except FileNotFoundError:
         print("Nie podano nazwy")
 
-root = tk.Tk()
-root.geometry("900x600")
+def loadText():
+    try:
+        with open(loadText_entry.get(), "r") as file:
+            text = file.read()
+            texty_entry.delete(0, tk.END)
+            texty_entry.insert(0, text)
+            file.close()
+    except FileNotFoundError:
+        print("Plik nie istnieje")
 
-key_frame = tk.Frame(root, bd=2, relief=tk.RAISED)
-key_frame.place(x=250, y=0)
-
-inner_frame = tk.Frame(key_frame)
-inner_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
-
-text="Klucz"
-text_label = tk.Label(inner_frame, text="Klucz")
-text_label.grid(row=0, column=1)
-
-key_label = tk.Label(inner_frame, text="Twój klucz:", font=("Aerial", 8))
-key_label.grid(row=1, column=0)
-
-key_entry = tk.Entry(inner_frame, width=15, font=("Arial", 8))
-key_entry.grid(row=1, column=1)
-
-key_entry.bind("<Key>", lambda e: "break")
-
-generate_button = tk.Button(inner_frame, text="Generuj klucz", font=("Arial", 8), command=generate_key)
-generate_button.grid(row=1, column=2, padx=10)
-
-loadKey_label = tk.Label(inner_frame, text="Wczytaj klucz z pliku:", font=("Aerial", 8))
-loadKey_label.grid(row=2, column=0)
-
-loadKey_entry = tk.Entry(inner_frame, width=15, font=("Aerial", 8))
-loadKey_entry.grid(row=2, column=1)
-
-loadKey_button = tk.Button(inner_frame, text="Wczytaj", font=("Arial", 8), command=loadKey)
-loadKey_button.grid(row=2, column=2, padx=10)
-
-saveKey_label = tk.Label(inner_frame, text="Zapisz klucz do pliku:", font=("Aerial", 8))
-saveKey_label.grid(row=3, column=0)
-
-saveKey_entry = tk.Entry(inner_frame, width=15, font=("Aerial", 8))
-saveKey_entry.grid(row=3, column=1)
-
-saveKey_button = tk.Button(inner_frame, text="Zapisz", font=("Arial", 8), command=saveKey)
-saveKey_button.grid(row=3, column=2, padx=10)
-
-sd_frame = tk.Frame(root, bd=2, relief=tk.RAISED)
-sd_frame.place(x=250 , y=200)
-
-inner2_frame = tk.Frame(sd_frame)
-inner2_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
-
-#root.mainloop()
-
+def loadCiphertext():
+    try:
+        with open(loadCiphertext_entry.get(), "r") as file:
+            text = file.read()
+            ciphertext_entry.delete(0, tk.END)
+            ciphertext_entry.insert(0, text)
+            file.close()
+    except FileNotFoundError:
+        print("Plik nie istnieje")
 
 def char_to_bits(char):
     binary_string = bin(ord(char))[2:].zfill(8)
@@ -220,69 +190,162 @@ def decode_from_base64(base64_string):
     binary_string = '0' * padding + binary_string
     return binary_string
 
-def encrypt(textToEncrypt, key):
+def encrypt():
+    text = texty_entry.get()
     result = ""
-    for i in range(0, len(textToEncrypt), 8):
-        message = textToEncrypt[i:i+8]
-        message = create64BitsBlock(message)
-        message = initialPermutation(message)
-        left, right = divide64BitsIntoLeftRihtHalf(message)
-        key = create64BitsBlock(key)
-        key = create56BitsKey(key)
-        for i in range(16):
-            rightCpy = right
-            keyMoved = moveKeyBitsIntoLeft(key, i+1)
-            key48 = create48BitsKey(keyMoved)
-            right = extendRightHalfOfData(right)
-            xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
-            xorResult = divideXorResultInto8x6BitBlocks(xorResult)
-            afterSBoxesPermutation = permutateWithSBoxes(xorResult)
-            pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
-            right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
-            left = rightCpy
-        finalConcatenate = right+left
-        result += finalPermutation(finalConcatenate)
-    return encode_to_base64(result)
+    if text is not None and key_entry.get() is not None:
+        for i in range(0, len(text), 8):
+            message = text[i:i+8]
+            message = create64BitsBlock(message)
+            message = initialPermutation(message)
+            left, right = divide64BitsIntoLeftRihtHalf(message)
+            key = key_entry.get()
+            key = create64BitsBlock(key)
+            key = create56BitsKey(key)
+            for i in range(16):
+                rightCpy = right
+                keyMoved = moveKeyBitsIntoLeft(key, i+1)
+                key48 = create48BitsKey(keyMoved)
+                right = extendRightHalfOfData(right)
+                xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
+                xorResult = divideXorResultInto8x6BitBlocks(xorResult)
+                afterSBoxesPermutation = permutateWithSBoxes(xorResult)
+                pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
+                right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
+                left = rightCpy
+            finalConcatenate = right+left
+            result += finalPermutation(finalConcatenate)
 
-import base64
+        ciphertext_entry.delete(0, tk.END)
+        ciphertext_entry.insert(0, encode_to_base64(result))
+        return encode_to_base64(result)
 
-def decrypt(textToDecrypt, key):
+def decrypt():
     word = ""
-    textToDecrypt = decode_from_base64(textToDecrypt)
+    textToDecrypt = decode_from_base64(ciphertext_entry.get())
     result = ""
-    for i in range(0, len(textToDecrypt), 64):
-        message = textToDecrypt[i:i+64]
-        message = initialPermutation(message)
-        left, right = divide64BitsIntoLeftRihtHalf(message)
-        key = create64BitsBlock(key)
-        key = create56BitsKey(key)
-        for i in reversed(range(16)):
-            rightCpy = right
-            keyMoved = moveKeyBitsIntoLeft(key, i+1)
-            key48 = create48BitsKey(keyMoved)
-            right = extendRightHalfOfData(right)
-            xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
-            xorResult = divideXorResultInto8x6BitBlocks(xorResult)
-            afterSBoxesPermutation = permutateWithSBoxes(xorResult)
-            pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
-            right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
-            left = rightCpy
-        finalConcatenate = right+left
-        result += finalPermutation(finalConcatenate)
-    for i in range(0, len(result), 8):
-        if(result[i:i+8] != "00000000"):
-            word += bits_to_char(result[i:i+8])
+    if textToDecrypt is not None and key_entry.get() is not None:
+        for i in range(0, len(textToDecrypt), 64):
+            message = textToDecrypt[i:i+64]
+            message = initialPermutation(message)
+            left, right = divide64BitsIntoLeftRihtHalf(message)
+            key = create64BitsBlock(key_entry.get())
+            key = create56BitsKey(key)
+            for i in reversed(range(16)):
+                rightCpy = right
+                keyMoved = moveKeyBitsIntoLeft(key, i+1)
+                key48 = create48BitsKey(keyMoved)
+                right = extendRightHalfOfData(right)
+                xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
+                xorResult = divideXorResultInto8x6BitBlocks(xorResult)
+                afterSBoxesPermutation = permutateWithSBoxes(xorResult)
+                pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
+                right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
+                left = rightCpy
+            finalConcatenate = right+left
+            result += finalPermutation(finalConcatenate)
+        for i in range(0, len(result), 8):
+            if(result[i:i+8] != "00000000"):
+                word += bits_to_char(result[i:i+8])
 
-    return word
-
-
-
-
-encrypted_text = encrypt("Dostalem ocene bardzo dobra!", "myKey123")
-print(encrypted_text)
-print(decrypt(encrypted_text, "myKey123"))
+        texty_entry.delete(0, tk.END)
+        texty_entry.insert(0, word)
+        return word
 
 
+
+
+#encrypted_text = encrypt("Dostalem ocene bardzo dobra!", "myKey123")
+#print(encrypted_text)
+#print(decrypt(encrypted_text, "myKey123"))
+
+root = tk.Tk()
+root.geometry("900x600")
+
+key_frame = tk.Frame(root, bd=2, relief=tk.RAISED)
+key_frame.place(x=250, y=0)
+
+inner_frame = tk.Frame(key_frame)
+inner_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
+
+textk_label = tk.Label(inner_frame, text="Klucz")
+textk_label.grid(row=0, column=1)
+
+key_label = tk.Label(inner_frame, text="Twój klucz:", font=("Aerial", 8))
+key_label.grid(row=1, column=0)
+
+key_entry = tk.Entry(inner_frame, width=15, font=("Arial", 8))
+key_entry.grid(row=1, column=1)
+
+key_entry.bind("<Key>", lambda e: "break")
+
+generate_button = tk.Button(inner_frame, text="Generuj klucz", font=("Arial", 8), command=generate_key)
+generate_button.grid(row=1, column=2, padx=10)
+
+loadKey_label = tk.Label(inner_frame, text="Wczytaj klucz z pliku:", font=("Aerial", 8))
+loadKey_label.grid(row=2, column=0)
+
+loadKey_entry = tk.Entry(inner_frame, width=15, font=("Aerial", 8))
+loadKey_entry.grid(row=2, column=1)
+
+loadKey_button = tk.Button(inner_frame, text="Wczytaj", font=("Arial", 8), command=loadKey)
+loadKey_button.grid(row=2, column=2, padx=10)
+
+saveKey_label = tk.Label(inner_frame, text="Zapisz klucz do pliku:", font=("Aerial", 8))
+saveKey_label.grid(row=3, column=0)
+
+saveKey_entry = tk.Entry(inner_frame, width=15, font=("Aerial", 8))
+saveKey_entry.grid(row=3, column=1)
+
+saveKey_button = tk.Button(inner_frame, text="Zapisz", font=("Arial", 8), command=saveKey)
+saveKey_button.grid(row=3, column=2, padx=10)
+
+sd_frame = tk.Frame(root, bd=2, relief=tk.RAISED)
+sd_frame.place(x=100 , y=200)
+
+inner2_frame = tk.Frame(sd_frame)
+inner2_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
+
+textz_label = tk.Label(inner2_frame, text="Szyfrowanie / Deszyfrowanie")
+textz_label.grid(row=0, column=0)
+
+loadText_label = tk.Label(inner2_frame, text="Wczytaj tekst z pliku:", font=("Aerial", 8))
+loadText_label.grid(row=1, column=0)
+
+loadText_entry = tk.Entry(inner2_frame, width=15, font=("Aerial", 8))
+loadText_entry.grid(row=2, column=0)
+
+loadText_button = tk.Button(inner2_frame, text="Wczytaj", font=("Arial", 8), command=loadText)
+loadText_button.grid(row=3, column=0, pady=10)
+
+loadCiphertext_label = tk.Label(inner2_frame, text="Wczytaj szyfrogram z pliku:", font=("Aerial", 8))
+loadCiphertext_label.grid(row=1, column=1)
+
+loadCiphertext_entry = tk.Entry(inner2_frame, width=15, font=("Aerial", 8))
+loadCiphertext_entry.grid(row=2, column=1)
+
+loadCiphertext_button = tk.Button(inner2_frame, text="Wczytaj", font=("Arial", 8), command=loadCiphertext)
+loadCiphertext_button.grid(row=3, column=1, pady=10)
+
+texty_label = tk.Label(inner2_frame, text="Tekst do zaszyfrowania:", font=("Aerial", 8))
+texty_label.grid(row=4, column=0)
+
+texty_entry = tk.Entry(inner2_frame, width=30, font=("Aerial", 8))
+texty_entry.grid(row=5, column=0)
+
+texty_button = tk.Button(inner2_frame, text="Szyfruj", font=("Arial", 8), command=encrypt)
+texty_button.grid(row=5, column=1)
+
+ciphertext_label = tk.Label(inner2_frame, text="Tekst do odszyfrowania:", font=("Aerial", 8))
+ciphertext_label.grid(row=4, column=3)
+
+ciphertext_entry = tk.Entry(inner2_frame, width=30, font=("Aerial", 8))
+ciphertext_entry.grid(row=5, column=3)
+
+ciphertext_button = tk.Button(inner2_frame, text="Rozszyfruj", font=("Arial", 8), command=decrypt)
+ciphertext_button.grid(row=5, column=2, padx=10)
+
+root.mainloop()
 
 
 
