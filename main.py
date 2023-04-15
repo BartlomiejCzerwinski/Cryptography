@@ -38,11 +38,13 @@ def saveKey():
 
 def loadText():
     try:
-        with open(loadText_entry.get(), "r") as file:
+        with open(loadText_entry.get(), "rb") as file:
             text = file.read()
+            binary_str = ''.join(format(byte, '08b') for byte in text)
             texty_entry.delete(0, tk.END)
             texty_entry.insert(0, text)
             file.close()
+            return binary_str
     except FileNotFoundError:
         print("Plik nie istnieje")
 
@@ -191,10 +193,12 @@ def decode_from_base64(base64_string):
     return binary_string
 
 def encrypt():
-    text = texty_entry.get()
+    text = loadText()
+    print(text)
     result = ""
     if text is not None and key_entry.get() is not None:
         for i in range(0, len(text), 8):
+            print("i", i)
             message = text[i:i+8]
             message = create64BitsBlock(message)
             message = initialPermutation(message)
@@ -215,9 +219,11 @@ def encrypt():
                 left = rightCpy
             finalConcatenate = right+left
             result += finalPermutation(finalConcatenate)
-
+        print("check1")
         ciphertext_entry.delete(0, tk.END)
+        print("check2")
         ciphertext_entry.insert(0, encode_to_base64(result))
+        print("check3")
         return encode_to_base64(result)
 
 def decrypt():
@@ -248,8 +254,13 @@ def decrypt():
             if(result[i:i+8] != "00000000"):
                 word += bits_to_char(result[i:i+8])
 
+        #save decrypted file
+        byte_array = bytearray([int(word[i:i + 8], 2) for i in range(0, len(word), 8)])
+        with open('decrypted_file', 'wb') as f:
+            f.write(byte_array)
+        ##############################################
         texty_entry.delete(0, tk.END)
-        texty_entry.insert(0, word)
+        texty_entry.insert(0, byte_array)
         return word
 
 
@@ -346,7 +357,3 @@ ciphertext_button = tk.Button(inner2_frame, text="Rozszyfruj", font=("Arial", 8)
 ciphertext_button.grid(row=5, column=2, padx=10)
 
 root.mainloop()
-
-
-
-
