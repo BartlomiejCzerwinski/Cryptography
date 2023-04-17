@@ -194,11 +194,9 @@ def decode_from_base64(base64_string):
 
 def encrypt():
     text = loadText()
-    print(text)
     result = ""
     if text is not None and key_entry.get() is not None:
         for i in range(0, len(text), 8):
-            print("i", i)
             message = text[i:i+8]
             message = create64BitsBlock(message)
             message = initialPermutation(message)
@@ -219,11 +217,15 @@ def encrypt():
                 left = rightCpy
             finalConcatenate = right+left
             result += finalPermutation(finalConcatenate)
-        print("check1")
+
         ciphertext_entry.delete(0, tk.END)
-        print("check2")
         ciphertext_entry.insert(0, encode_to_base64(result))
-        print("check3")
+
+        # save decrypted file
+        with open('encrypted_file', 'w') as f:
+            f.write(encode_to_base64(result))
+        ##############################################
+
         return encode_to_base64(result)
 
 def decrypt():
@@ -260,15 +262,9 @@ def decrypt():
             f.write(byte_array)
         ##############################################
         texty_entry.delete(0, tk.END)
-        texty_entry.insert(0, byte_array)
+        texty_entry.insert(0, encode_to_base64(word))
         return word
 
-
-
-
-#encrypted_text = encrypt("Dostalem ocene bardzo dobra!", "myKey123")
-#print(encrypted_text)
-#print(decrypt(encrypted_text, "myKey123"))
 
 root = tk.Tk()
 root.geometry("900x600")
