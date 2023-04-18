@@ -18,10 +18,10 @@ def loadKey():
                 key_entry.insert(0, key)
                 file.close()
             else:
-                print("Klucz ma nieprawidłową długość")
+                print("Key has wrong length")
                 file.close()
     except FileNotFoundError:
-        print("Plik nie istnieje")
+        print("File doesn't exist")
 
 def saveKey():
     try:
@@ -31,10 +31,10 @@ def saveKey():
                 file.write(key)
                 file.close()
             else:
-                print("Klucz ma nieprawidłową długość")
+                print("Key has wrong length")
                 file.close()
     except FileNotFoundError:
-        print("Nie podano nazwy")
+        print("Enter name first")
 
 def loadText():
     try:
@@ -46,8 +46,17 @@ def loadText():
             file.close()
             return binary_str
     except FileNotFoundError:
-        print("Plik nie istnieje")
+        print("File doesn't exist")
 
+def saveText():
+    try:
+        with open(saveText_entry.get(), "wb") as file:
+                text = texty_entry.get()
+                binary = ''.join(format(ord(char), '08b') for char in text)
+                file.write(int(binary, 2).to_bytes((len(binary) + 7) // 8, byteorder='big'))
+                file.close()
+    except FileNotFoundError:
+        print("Enter name first")
 def loadCiphertext():
     try:
         with open(loadCiphertext_entry.get(), "r") as file:
@@ -56,7 +65,16 @@ def loadCiphertext():
             ciphertext_entry.insert(0, text)
             file.close()
     except FileNotFoundError:
-        print("Plik nie istnieje")
+        print("File doesn't exist")
+
+def saveCiphertext():
+    try:
+        with open(saveCiphertext_entry.get(), "w") as file:
+            text = ciphertext_entry.get()
+            file.write(text)
+            file.close()
+    except FileNotFoundError:
+        print("Enter name first")
 
 def char_to_bits(char):
     binary_string = bin(ord(char))[2:].zfill(8)
@@ -220,12 +238,6 @@ def encrypt():
 
         ciphertext_entry.delete(0, tk.END)
         ciphertext_entry.insert(0, encode_to_base64(result))
-
-        # save decrypted file
-        with open('encrypted_file', 'w') as f:
-            f.write(encode_to_base64(result))
-        ##############################################
-
         return encode_to_base64(result)
 
 def decrypt():
@@ -256,14 +268,14 @@ def decrypt():
             if(result[i:i+8] != "00000000"):
                 word += bits_to_char(result[i:i+8])
 
-        #save decrypted file
         byte_array = bytearray([int(word[i:i + 8], 2) for i in range(0, len(word), 8)])
-        with open('decrypted_file', 'wb') as f:
-            f.write(byte_array)
-        ##############################################
+        content = byte_array.decode('iso-8859-1')
         texty_entry.delete(0, tk.END)
-        texty_entry.insert(0, encode_to_base64(word))
+        texty_entry.insert(0, content)
         return word
+
+
+
 
 
 root = tk.Tk()
@@ -275,10 +287,10 @@ key_frame.place(x=250, y=0)
 inner_frame = tk.Frame(key_frame)
 inner_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
 
-textk_label = tk.Label(inner_frame, text="Klucz")
+textk_label = tk.Label(inner_frame, text="Key")
 textk_label.grid(row=0, column=1)
 
-key_label = tk.Label(inner_frame, text="Twój klucz:", font=("Aerial", 8))
+key_label = tk.Label(inner_frame, text="Your key:", font=("Aerial", 8))
 key_label.grid(row=1, column=0)
 
 key_entry = tk.Entry(inner_frame, width=15, font=("Arial", 8))
@@ -286,25 +298,25 @@ key_entry.grid(row=1, column=1)
 
 key_entry.bind("<Key>", lambda e: "break")
 
-generate_button = tk.Button(inner_frame, text="Generuj klucz", font=("Arial", 8), command=generate_key)
+generate_button = tk.Button(inner_frame, text="Generate key", font=("Arial", 8), command=generate_key)
 generate_button.grid(row=1, column=2, padx=10)
 
-loadKey_label = tk.Label(inner_frame, text="Wczytaj klucz z pliku:", font=("Aerial", 8))
+loadKey_label = tk.Label(inner_frame, text="Load key from file:", font=("Aerial", 8))
 loadKey_label.grid(row=2, column=0)
 
 loadKey_entry = tk.Entry(inner_frame, width=15, font=("Aerial", 8))
 loadKey_entry.grid(row=2, column=1)
 
-loadKey_button = tk.Button(inner_frame, text="Wczytaj", font=("Arial", 8), command=loadKey)
+loadKey_button = tk.Button(inner_frame, text="Load", font=("Arial", 8), command=loadKey)
 loadKey_button.grid(row=2, column=2, padx=10)
 
-saveKey_label = tk.Label(inner_frame, text="Zapisz klucz do pliku:", font=("Aerial", 8))
+saveKey_label = tk.Label(inner_frame, text="Save key to file:", font=("Aerial", 8))
 saveKey_label.grid(row=3, column=0)
 
 saveKey_entry = tk.Entry(inner_frame, width=15, font=("Aerial", 8))
 saveKey_entry.grid(row=3, column=1)
 
-saveKey_button = tk.Button(inner_frame, text="Zapisz", font=("Arial", 8), command=saveKey)
+saveKey_button = tk.Button(inner_frame, text="Save", font=("Arial", 8), command=saveKey)
 saveKey_button.grid(row=3, column=2, padx=10)
 
 sd_frame = tk.Frame(root, bd=2, relief=tk.RAISED)
@@ -313,43 +325,61 @@ sd_frame.place(x=100 , y=200)
 inner2_frame = tk.Frame(sd_frame)
 inner2_frame.pack(expand=True, fill=tk.BOTH, padx=50, pady=50)
 
-textz_label = tk.Label(inner2_frame, text="Szyfrowanie / Deszyfrowanie")
+textz_label = tk.Label(inner2_frame, text="Encryption / Decryption")
 textz_label.grid(row=0, column=0)
 
-loadText_label = tk.Label(inner2_frame, text="Wczytaj tekst z pliku:", font=("Aerial", 8))
+loadText_label = tk.Label(inner2_frame, text="Load text from file:", font=("Aerial", 8))
 loadText_label.grid(row=1, column=0)
 
 loadText_entry = tk.Entry(inner2_frame, width=15, font=("Aerial", 8))
 loadText_entry.grid(row=2, column=0)
 
-loadText_button = tk.Button(inner2_frame, text="Wczytaj", font=("Arial", 8), command=loadText)
+loadText_button = tk.Button(inner2_frame, text="Load", font=("Arial", 8), command=loadText)
 loadText_button.grid(row=3, column=0, pady=10)
 
-loadCiphertext_label = tk.Label(inner2_frame, text="Wczytaj szyfrogram z pliku:", font=("Aerial", 8))
+loadCiphertext_label = tk.Label(inner2_frame, text="Load ciphertext from file:", font=("Aerial", 8))
 loadCiphertext_label.grid(row=1, column=1)
 
 loadCiphertext_entry = tk.Entry(inner2_frame, width=15, font=("Aerial", 8))
 loadCiphertext_entry.grid(row=2, column=1)
 
-loadCiphertext_button = tk.Button(inner2_frame, text="Wczytaj", font=("Arial", 8), command=loadCiphertext)
+loadCiphertext_button = tk.Button(inner2_frame, text="Load", font=("Arial", 8), command=loadCiphertext)
 loadCiphertext_button.grid(row=3, column=1, pady=10)
 
-texty_label = tk.Label(inner2_frame, text="Tekst do zaszyfrowania:", font=("Aerial", 8))
+saveText_label = tk.Label(inner2_frame, text="Save text to file:", font=("Aerial", 8))
+saveText_label.grid(row=1, column=2)
+
+saveText_entry = tk.Entry(inner2_frame, width=15, font=("Aerial", 8))
+saveText_entry.grid(row=2, column=2)
+
+saveText_button = tk.Button(inner2_frame, text="Save", font=("Arial", 8), command=saveText)
+saveText_button.grid(row=3, column=2, pady=10)
+
+saveCiphertext_label = tk.Label(inner2_frame, text="Save ciphertext to file:", font=("Aerial", 8))
+saveCiphertext_label.grid(row=1, column=3)
+
+saveCiphertext_entry = tk.Entry(inner2_frame, width=15, font=("Aerial", 8))
+saveCiphertext_entry.grid(row=2, column=3)
+
+saveCiphertext_button = tk.Button(inner2_frame, text="Save", font=("Arial", 8), command=saveCiphertext)
+saveCiphertext_button.grid(row=3, column=3, pady=10)
+
+texty_label = tk.Label(inner2_frame, text="Text to encryption:", font=("Aerial", 8))
 texty_label.grid(row=4, column=0)
 
 texty_entry = tk.Entry(inner2_frame, width=30, font=("Aerial", 8))
 texty_entry.grid(row=5, column=0)
 
-texty_button = tk.Button(inner2_frame, text="Szyfruj", font=("Arial", 8), command=encrypt)
+texty_button = tk.Button(inner2_frame, text="Encrypt", font=("Arial", 8), command=encrypt)
 texty_button.grid(row=5, column=1)
 
-ciphertext_label = tk.Label(inner2_frame, text="Tekst do odszyfrowania:", font=("Aerial", 8))
+ciphertext_label = tk.Label(inner2_frame, text="Text to decryption:", font=("Aerial", 8))
 ciphertext_label.grid(row=4, column=3)
 
 ciphertext_entry = tk.Entry(inner2_frame, width=30, font=("Aerial", 8))
 ciphertext_entry.grid(row=5, column=3)
 
-ciphertext_button = tk.Button(inner2_frame, text="Rozszyfruj", font=("Arial", 8), command=decrypt)
+ciphertext_button = tk.Button(inner2_frame, text="Decrypt", font=("Arial", 8), command=decrypt)
 ciphertext_button.grid(row=5, column=2, padx=10)
 
 root.mainloop()
