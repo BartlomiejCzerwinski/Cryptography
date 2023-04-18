@@ -210,26 +210,33 @@ def decode_from_base64(base64_string):
     binary_string = '0' * padding + binary_string
     return binary_string
 
+def generateKeysArray(key56Bits):
+    result = []
+    for i in range(16):
+        result.append(moveKeyBitsIntoLeft(key56Bits, i+1))
+    return result
+
+
 def encrypt():
     text = loadText()
     result = ""
     if text is not None and key_entry.get() is not None:
+        key = key_entry.get()
+        key = create64BitsBlock(key)
+        key = create56BitsKey(key)
+        keysArray = generateKeysArray(key)
         for i in range(0, len(text), 8):
             message = text[i:i+8]
             message = create64BitsBlock(message)
             message = initialPermutation(message)
             left, right = divide64BitsIntoLeftRihtHalf(message)
-            key = key_entry.get()
-            key = create64BitsBlock(key)
-            key = create56BitsKey(key)
             for i in range(16):
                 rightCpy = right
-                keyMoved = moveKeyBitsIntoLeft(key, i+1)
-                key48 = create48BitsKey(keyMoved)
+                key48 = create48BitsKey(keysArray[i])
                 right = extendRightHalfOfData(right)
                 xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
-                xorResult = divideXorResultInto8x6BitBlocks(xorResult)
-                afterSBoxesPermutation = permutateWithSBoxes(xorResult)
+                blocks8Bits = divideXorResultInto8x6BitBlocks(xorResult)
+                afterSBoxesPermutation = permutateWithSBoxes(blocks8Bits)
                 pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
                 right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
                 left = rightCpy
@@ -245,20 +252,20 @@ def decrypt():
     textToDecrypt = decode_from_base64(ciphertext_entry.get())
     result = ""
     if textToDecrypt is not None and key_entry.get() is not None:
+        key = create64BitsBlock(key_entry.get())
+        key = create56BitsKey(key)
+        keysArray = generateKeysArray(key)
         for i in range(0, len(textToDecrypt), 64):
             message = textToDecrypt[i:i+64]
             message = initialPermutation(message)
             left, right = divide64BitsIntoLeftRihtHalf(message)
-            key = create64BitsBlock(key_entry.get())
-            key = create56BitsKey(key)
             for i in reversed(range(16)):
                 rightCpy = right
-                keyMoved = moveKeyBitsIntoLeft(key, i+1)
-                key48 = create48BitsKey(keyMoved)
+                key48 = create48BitsKey(keysArray[i])
                 right = extendRightHalfOfData(right)
                 xorResult = xorOnRightHalfAnd48BitsKey(right, key48)
-                xorResult = divideXorResultInto8x6BitBlocks(xorResult)
-                afterSBoxesPermutation = permutateWithSBoxes(xorResult)
+                blocks8Bits = divideXorResultInto8x6BitBlocks(xorResult)
+                afterSBoxesPermutation = permutateWithSBoxes(blocks8Bits)
                 pBlockPermutatuion = permutateWithPBlock(afterSBoxesPermutation)
                 right = xorOnLeftHalfAndPermutationWithPBlockResult(left, pBlockPermutatuion)
                 left = rightCpy
@@ -273,9 +280,6 @@ def decrypt():
         texty_entry.delete(0, tk.END)
         texty_entry.insert(0, content)
         return word
-
-
-
 
 
 root = tk.Tk()
