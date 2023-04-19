@@ -4,7 +4,7 @@ You can learn more about DES [HERE](https://en.wikipedia.org/wiki/Data_Encryptio
 ## ENCRYPTION
 If you want to encode a message first thing is to enter 64 - bits key in the key section. You can do it by generating a random key or loading an existing one from the file:
 
-![](https://user-images.githubusercontent.com/84719721/232807749-422009d3-00f4-43ef-bf0e-fcc0fdd13b3a.png =600x400)
+![](https://user-images.githubusercontent.com/84719721/232807749-422009d3-00f4-43ef-bf0e-fcc0fdd13b3a.png)
 
 Here we're gonna generate a random key, remember to save the key to the file. (if you want to decode the message later).
 
@@ -24,7 +24,7 @@ Now you can save encrypted data to a file. Enter the name of the file and click 
 
 After running the encrypted file in Notepad we can see the encryption result:
 
-![](https://user-images.githubusercontent.com/84719721/232807739-a3081d3e-cfca-4f65-b31f-5a69c6aa4b37.png =553x475)
+![](https://user-images.githubusercontent.com/84719721/232807739-a3081d3e-cfca-4f65-b31f-5a69c6aa4b37.png)
 
 ## DECRYPTION
 The decryption process is very similar to encryption. First, you have to enter the proper key - otherwise, the file won't be decoded right. After that, you can load data from the file by entering the file's name and confirming it with the "Load" button. You can see loaded data in the "Text to decryption" window:
